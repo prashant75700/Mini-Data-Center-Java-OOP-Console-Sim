@@ -246,6 +246,66 @@ class LoadBalancer extends Server{
 
 public class DataCenterSimulation {
     public static void main(String[] args) {
-        
+System.out.println("╔═══════════════════════════════════════╗");
+        System.out.println("║     DATA CENTER SIMULATION            ║");
+        System.out.println("╚═══════════════════════════════════════╝\n");
+
+        //Provision servers
+        WebServer web1 = new WebServer("web-01", "121.14.2.10", 4, 16, 0500, 8080);
+        WebServer web2 = new WebServer("web-02", "121.45.2.10", 4, 16, 500, 3232);
+        DatabaseServer db1 = new DatabaseServer("db-01", "10.0.2.12", 8, 32, 1000, "PostgreSQL");
+        LoadBalancer lb = new LoadBalancer("lb-01", "10.0.0.10", 2, 8, 100);
+
+        // Now start the simulation: 
+        System.out.println("\n========== STARTING INFRASTRUCTURE ==========");
+        web1.start();
+        web2.start();
+        db1.start();
+        lb.start();
+
+        //Configure load balancer:
+        System.out.println("\n========== CONFIGURING LOAD BALANCER ==========");
+        lb.addBackend(web1);
+        lb.addBackend(web2);
+
+        //Simulateing Traffic:
+        System.out.println("\n========== SIMULATING TRAFFIC ==========");
+        lb.distributedTraffic("192.168.1.100");
+        lb.distributedTraffic("192.165.1.101");
+        lb.distributedTraffic("192.168.1.102");
+        lb.distributedTraffic("192.168.1.103");
+        lb.distributedTraffic("192.145.2.300");
+
+        //Database Operations:
+        System.out.println("\n========== DATABASE OPERATIONS ==========");
+        db1.executeQuery("Select * FROM users WHERE id = 1");
+        db1.executeQuery("Insert INTO Orders Values(...)");
+        db1.createBackup();
+        db1.optimizeDatabase();
+
+        //Health checks:
+        System.out.println("\n========== HEALTH CHECKS ==========");
+        web1.checkHealth();
+        web2.checkHealth();
+        db1.checkHealth();
+        lb.checkHealth();
+
+        //Display all Server Info:
+        web1.displayinfo();
+        web2.displayinfo();
+        db1.displayinfo();
+        lb.displayinfo();
+
+        //for Restarting a Server:
+         System.out.println("\n========== MAINTENANCE ==========");
+         web1.restart();
+
+         //POLYMORPHISM Ex: Manage all Servers uniformly
+         System.out.println("\n========== INFRASTRUCTURE STATUS ==========");
+         Server[] infrastructure = {web1, web2, db1, lb};
+
+         for (Server server : infrastructure) {
+            System.out.println(server.hostname + ": " + (server.isRunning ? " 🟢 UP" : " 🛑 DOWN"));
+         }
     }
 }
