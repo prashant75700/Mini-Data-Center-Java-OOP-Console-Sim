@@ -6,7 +6,7 @@ class Server {
     protected int ramGB;
     protected int diskGB;
     protected boolean isRunning;
-    protected int cpuUsagePercet;
+    protected int cpuUsagePercent;
     protected int memoryUsesPercent;
 
     public Server (String hostname, String ipAddress, int cpuCores, int ramGB, int diskGB) {
@@ -16,7 +16,7 @@ class Server {
         this.ramGB = ramGB;
         this.diskGB = diskGB;
         this.isRunning = false;
-        this.cpuUsagePercet = 0;
+        this.cpuUsagePercent = 0;
         this.memoryUsesPercent = 0;
 
         System.out.println(" Server provisioned: " + hostname);
@@ -25,7 +25,7 @@ class Server {
     public void start() {
         if (!isRunning) {
             isRunning = true;
-            cpuUsagePercet = 10;
+            cpuUsagePercent = 10;
             memoryUsesPercent = 15;
             System.out.println("🚀 " + hostname + " STARTED");
         }
@@ -37,7 +37,7 @@ class Server {
     public void stop() {
         if (isRunning) {
             isRunning = false;
-            cpuUsagePercet = 0;
+            cpuUsagePercent = 0;
             memoryUsesPercent = 0;
             System.out.println("🛑 " + hostname + " STOPPED");
         }
@@ -59,10 +59,10 @@ class Server {
     public void checkHealth() {
         System.out.println("\nHEALTH CHECK: " + hostname);
         System.out.println("Status: " + (isRunning ? "🟢 UP" : "🛑 DOWN"));
-        System.out.println("CPU Usage: " + cpuUsagePercet + "%");
+        System.out.println("CPU Usage: " + cpuUsagePercent + "%");
         System.out.println("Memory Usage: " + memoryUsesPercent + "%");
 
-        if (cpuUsagePercet > 80 ) {
+        if (cpuUsagePercent > 80 ) {
             System.out.println("⚠️ HIGH CPU ALERT!");
         }
         if (memoryUsesPercent > 80) {
@@ -106,7 +106,7 @@ class WebServer extends Server {
     public void handleRequest (String clientIP) {
         if (isRunning) {
             activeConnections++;
-            cpuUsagePercet +=5;
+            cpuUsagePercent +=5;
             memoryUsesPercent +=3;
             System.out.println(" Handling request from " + clientIP + " (Active: " + activeConnections + ")");
         }
@@ -133,5 +133,119 @@ class WebServer extends Server {
 
 //DATABASE SERVER - TO STORE DATA
 class DatabaseServer extends Server {
+    private String databaseType;
+    private int maxConnections;
+    private int currentConnections;
 
+    public DatabaseServer(String hostname, String ipAddress, int cpuCores, int ramGB, int diskGB, String dbType) {
+        super(hostname, ipAddress, cpuCores, ramGB, diskGB);
+        this.databaseType = dbType;
+        this.maxConnections = 100;
+        this.currentConnections = 0;
+    }
+
+    public void executeQuery(String query) {
+        if (isRunning) {
+            cpuUsagePercent += 10;
+            memoryUsesPercent += 5;
+            System.out.println("Executing: " + query);
+        }
+        else {
+            System.out.println("❌ Database DOWN");
+        }
+    }
+
+    public void createBackup() {
+        if (isRunning) {
+            System.out.println("Creating backup Of " + databaseType + " database....");
+            cpuUsagePercent += 20;
+            System.out.println("Backup Completed!");
+        }
+    }
+
+    public void optimizeDatabase() {
+        System.out.println("Optimizing Database.....");
+        cpuUsagePercent = 90;
+        try {
+            Thread.sleep(1500);
+        } catch (InterruptedException e) {}
+        cpuUsagePercent = 20;
+        System.out.println("Optimization Complete! ");
+    }
+
+    @Override
+    public void displayinfo(){
+        super.displayinfo();
+        System.out.println("Type: DATABASE SERVER ");
+        System.out.println("DB Type: " + databaseType);
+        System.out.println("Connections: " + currentConnections + "/" + maxConnections);
+    }
+
+}
+
+// Now have to add LOAD Balancer 
+
+class LoadBalancer extends Server{
+    private WebServer[] backends;
+    private int currentBackendIndex;
+
+    public LoadBalancer( String hostname, String ipAddress, int cpuCores, int ramGB, int diskGB) {
+        super(hostname, ipAddress, cpuCores, ramGB, diskGB);
+        this.backends = new WebServer[3];
+        this.currentBackendIndex = 0;
+    }
+
+    public void addBackend(WebServer server) {
+        for (int i = 0; i < backends.length; i++ ) {
+            if (backends[i] == null) {
+                backends[i] = server;
+                System.out.println("Backend added: " + server.hostname);
+                return;
+            }
+        }
+        System.out.println("Max Backends reached");
+    }
+
+    public void distributedTraffic(String clientIP) {
+        if (!isRunning) {
+            System.out.println("Load Balancer DOWN ");
+            return;
+        }
+
+        //Round-Robin Distribution using here:
+        WebServer backend = backends[currentBackendIndex];
+        if (backend != null && backend.isRunning) {
+            System.out.println("Routing " + clientIP + " --> " + backend.hostname);
+            backend.handleRequest(clientIP);
+            currentBackendIndex = (currentBackendIndex + 1) % backends.length;
+        }
+        else {
+            System.out.println("No healthy backends! ");
+        }
+    }
+
+    @Override
+    public void displayinfo() {
+        super.displayinfo();
+        System.out.println("Type: LOAD BALANCER ~~~ ");
+        System.out.println("Backends configured: " + countBackends());
+    }
+
+    private int countBackends() {
+        int count = 0;
+        for (WebServer backend : backends) {
+            if (backend != null)  count++;
+            
+        }
+        return count;
+
+    }
+}
+
+// Our Main class ~~~~~
+
+public class DataCenterSimulation {
+    public static void main(String[] args) {
+        
+    }
 }
